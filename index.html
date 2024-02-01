@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        canvas {
+            border: 1px solid #000;
+            display: block;
+            margin: 20px auto;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+        }
+    </style>
+    <title>Car Game</title>
+</head>
+<body>
+    <button id="startButton">Start Game</button>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Car properties
+        const carWidth = 60;
+        const carHeight = 100;
+        let carX = (canvas.width - carWidth) / 2;
+        const carY = canvas.height - carHeight - 10;
+        const carSpeed = 5;
+
+        // Obstacle properties
+        const obstacleWidth = 30;
+        const obstacleHeight = 30;
+        const obstacleSpeed = 2;
+        const obstacles = [];
+
+        // Keyboard input
+        const keys = {};
+
+        // Game state
+        let isGameRunning = false;
+        let score = 0;
+
+        // Start button
+        const startButton = document.getElementById("startButton");
+        startButton.addEventListener("click", startGame);
+
+        window.addEventListener("keydown", function (e) {
+            keys[e.key] = true;
+        });
+
+        window.addEventListener("keyup", function (e) {
+            keys[e.key] = false;
+        });
+
+        function startGame() {
+            isGameRunning = true;
+            score = 0;
+            obstacles.length = 0;
+            startButton.style.display = "none";
+            updateGameArea();
+        }
+
+        function createObstacle() {
+            const obstacleX = Math.random() * (canvas.width - obstacleWidth);
+            obstacles.push({ x: obstacleX, y: 0 });
+        }
+
+        function drawCar() {
+            // Car body
+            ctx.fillStyle = "#00F";
+            ctx.fillRect(carX, carY, carWidth, carHeight);
+
+            // Car roof
+            ctx.fillStyle = "#00F";
+            ctx.beginPath();
+            ctx.moveTo(carX, carY);
+            ctx.lineTo(carX + carWidth / 2, carY - 20);
+            ctx.lineTo(carX + carWidth, carY);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function updateGameArea() {
+            if (isGameRunning) {
+                // Move the car based on keyboard input
+                if (keys["ArrowLeft"] && carX > 0) {
+                    carX -= carSpeed;
+                }
+
+                if (keys["ArrowRight"] && carX < canvas.width - carWidth) {
+                    carX += carSpeed;
+                }
+
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw the car
+                drawCar();
+
+                // Draw and move obstacles
+                ctx.fillStyle = "#F00";
+                for (let i = 0; i < obstacles.length; i++) {
+                    ctx.fillRect(obstacles[i].x, obstacles[i].y, obstacleWidth, obstacleHeight);
+                    obstacles[i].y += obstacleSpeed;
+
+                    // Check for collisions with the car
+                    if (
+                        obstacles[i].y < carY + carHeight &&
+                        obstacles[i].y + obstacleHeight > carY &&
+                        obstacles[i].x < carX + carWidth &&
+                        obstacles[i].x + obstacleWidth > carX
+                    ) {
+                        endGame();
+                        return;
+                    }
+                }
+
+                // Generate new obstacles less frequently (change 0.02 to a smaller value)
+                if (Math.random() < 0.01) {
+                    createObstacle();
+                }
+
+                // Remove off-screen obstacles
+                obstacles.forEach((obstacle, index) => {
+                    if (obstacle.y > canvas.height) {
+                        obstacles.splice(index, 1);
+                        score++;
+                    }
+                });
+
+                // Display score
+                ctx.fillStyle = "#000";
+                ctx.font = "20px Arial";
+                ctx.fillText("Score: " + score, 10, 30);
+
+                // Request the next frame
+                requestAnimationFrame(updateGameArea);
+            }
+        }
+
+        function endGame() {
+            isGameRunning = false;
+            startButton.style.display = "block";
+            alert("Game Over! Your score: " + score);
+        }
+    </script>
+</body>
+</html>
